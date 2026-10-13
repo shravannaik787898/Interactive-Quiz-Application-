@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Day 32 - Interactive Quiz App</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .quiz-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; }
+        .option-btn { display: block; width: 100%; padding: 10px; margin: 8px 0; background: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; text-align: left; }
+        .option-btn:hover { background: #e2e6ea; }
+        #result { text-align: center; font-weight: bold; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card" id="quizContainer">
+    <h3 id="questionTitle">Question text</h3>
+    <div id="optionsContainer"></div>
+</div>
+
+<script>
+const quizData = [
+    {
+        question: "What does HTML stand for?",
+        options: ["Hyper Text Markup Language", "High Tech Multi Language", "Hyperlink Text Model Language"],
+        answer: 0
+    },
+    {
+        question: "Which CSS property controls text size?",
+        options: ["font-style", "text-size", "font-size"],
+        answer: 2
+    },
+    {
+        question: "Inside which HTML element do we put JavaScript?",
+        options: ["js", "script", "javascript"],
+        answer: 1
+    }
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+function loadQuiz() {
+    if (currentQuestion < quizData.length) {
+        let q = quizData[currentQuestion];
+        document.getElementById('questionTitle').innerText = `Q${currentQuestion + 1}: ${q.question}`;
+        
+        let optHtml = "";
+        q.options.forEach((opt, index) => {
+            optHtml += `<button class="option-btn" onclick="checkAnswer(${index})">${opt}</button>`;
+        });
+        document.getElementById('optionsContainer').innerHTML = optHtml;
+    } else {
+        document.getElementById('quizContainer').innerHTML = `
+            <h2>Quiz Completed!</h2>
+            <p id="result">Your Score: ${score} / ${quizData.length}</p>
+        `;
+    }
+}
+
+function checkAnswer(selected) {
+    if (selected === quizData[currentQuestion].answer) {
+        score++;
+    }
+    currentQuestion++;
+    loadQuiz();
+}
+
+// Initialize Quiz
+loadQuiz();
+</script>
+
+</body>
+</html>
