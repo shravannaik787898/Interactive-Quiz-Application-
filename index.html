@@ -1,74 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Day 32 - Interactive Quiz App</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .quiz-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; }
-        .option-btn { display: block; width: 100%; padding: 10px; margin: 8px 0; background: #f8f9fa; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; text-align: left; }
-        .option-btn:hover { background: #e2e6ea; }
-        #result { text-align: center; font-weight: bold; font-size: 18px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LingoQuest - Interactive Language Mastery Arena</title>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+      --panel-bg: rgba(255, 255, 255, 0.05);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --card-bg: rgba(30, 27, 75, 0.6);
+      --accent-coral: #ff6b6b;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app-wrapper {
+      max-width: 1100px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.2rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent-coral), var(--accent-purple));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--panel-border);
+      padding: 0.4rem 0.85rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .stat-pill.streak { color: var(--accent-amber); border-color: rgba(245, 158, 11, 0.3); }
+    .stat-pill.xp { color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.3); }
+
+    /* Arena Grid Layout */
+    .arena-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2rem;
+    }
+
+    /* Main Flashcard Arena */
+    .main-stage {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 480px;
+      position: relative;
+    }
+
+    /* Flashcard Element */
+    .flashcard-wrapper {
+      perspective: 1000px;
+      width: 100%;
+      max-width: 440px;
+      height: 280px;
+      cursor: pointer;
+      margin: 1.5rem 0;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+    }
+
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, rgba(88, 28, 135, 0.9), rgba(49, 16, 66, 0.95));
+      transform: rotateY(180deg);
+    }
+
+    .word-flag {
+      font-size: 2.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .word-main {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .word-sub {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-style: italic;
+    }
+
+    .card-hint {
+      position: absolute;
+      bottom: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Controls */
+    .controls-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .btn-action {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--panel-border);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-action.wrong:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+
+    .btn-action.correct:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: #6ee7b7;
+    }
+
+    /* Side Panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel-box {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Level Progress */
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 65%;
+      background: linear-gradient(90deg, var(--accent-coral), var(--accent-purple));
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    /* Deck Selector */
+    .deck-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .deck-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .deck-item.active, .deck-item:hover {
+      background: rgba(168, 85, 247, 0.15);
+      border-color: var(--accent-purple);
+    }
+
+    .deck-info {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .deck-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .deck-badge {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 850px) {
+      .arena-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<div class="quiz-card" id="quizContainer">
-    <h3 id="questionTitle">Question text</h3>
-    <div id="optionsContainer"></div>
-</div>
+  <div class="app-wrapper">
+    
+    <!-- Navigation Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <i data-lucide="languages" style="width: 24px; height: 24px;"></i>
+        </div>
+        <span class="brand-title">LingoQuest</span>
+      </div>
 
-<script>
-const quizData = [
-    {
-        question: "What does HTML stand for?",
-        options: ["Hyper Text Markup Language", "High Tech Multi Language", "Hyperlink Text Model Language"],
-        answer: 0
-    },
-    {
-        question: "Which CSS property controls text size?",
-        options: ["font-style", "text-size", "font-size"],
-        answer: 2
-    },
-    {
-        question: "Inside which HTML element do we put JavaScript?",
-        options: ["js", "script", "javascript"],
-        answer: 1
-    }
-];
+      <div class="user-stats">
+        <div class="stat-pill streak">
+          <i data-lucide="flame" style="width: 16px; height: 16px; fill: var(--accent-amber);"></i>
+          <span>5 Day Streak</span>
+        </div>
+        <div class="stat-pill xp">
+          <i data-lucide="zap" style="width: 16px; height: 16px; fill: var(--accent-cyan);"></i>
+          <span id="xpText">1,240 XP</span>
+        </div>
+      </div>
+    </header>
 
-let currentQuestion = 0;
-let score = 0;
+    <!-- Main Game Grid -->
+    <div class="arena-grid">
+      
+      <!-- Center Flashcard Stage -->
+      <main class="main-stage">
+        <div style="text-align: center;">
+          <span style="font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; color: var(--accent-coral); text-transform: uppercase;">
+            SPANISH ESSENTIALS • CARD <span id="cardNum">1</span> OF 5
+          </span>
+        </div>
 
-function loadQuiz() {
-    if (currentQuestion < quizData.length) {
-        let q = quizData[currentQuestion];
-        document.getElementById('questionTitle').innerText = `Q${currentQuestion + 1}: ${q.question}`;
+        <!-- Flip Flashcard -->
+        <div class="flashcard-wrapper" onclick="toggleFlip()">
+          <div class="flashcard" id="cardElement">
+            <!-- Front -->
+            <div class="card-face card-front">
+              <span class="word-flag">🇪🇸</span>
+              <h2 class="word-main" id="wordFront">El Sol</h2>
+              <span class="word-sub">Noun (Masculine)</span>
+              <div class="card-hint">
+                <i data-lucide="rotate-cw" style="width: 12px; height: 12px;"></i>
+                <span>Click card to reveal translation</span>
+              </div>
+            </div>
+            <!-- Back -->
+            <div class="card-face card-back">
+              <span class="word-flag">🇬🇧</span>
+              <h2 class="word-main" id="wordBack">The Sun</h2>
+              <span class="word-sub">"El sol brilla en el cielo."</span>
+              <div class="card-hint">
+                <i data-lucide="volume-2" style="width: 14px; height: 14px;"></i>
+                <span>Example usage sentence</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Response Action Buttons -->
+        <div class="controls-row">
+          <button class="btn-action wrong" onclick="nextCard(false)">
+            <i data-lucide="x" style="width: 18px; height: 18px;"></i> Review Again
+          </button>
+          <button class="btn-action correct" onclick="nextCard(true)">
+            <i data-lucide="check" style="width: 18px; height: 18px;"></i> Got It (+20 XP)
+          </button>
+        </div>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="side-panel">
         
-        let optHtml = "";
-        q.options.forEach((opt, index) => {
-            optHtml += `<button class="option-btn" onclick="checkAnswer(${index})">${opt}</button>`;
-        });
-        document.getElementById('optionsContainer').innerHTML = optHtml;
-    } else {
-        document.getElementById('quizContainer').innerHTML = `
-            <h2>Quiz Completed!</h2>
-            <p id="result">Your Score: ${score} / ${quizData.length}</p>
-        `;
+        <!-- Level Progress Card -->
+        <div class="panel-box">
+          <div class="panel-header">
+            <i data-lucide="trophy" style="width: 18px; height: 18px; color: var(--accent-amber);"></i>
+            <span>Level 4 Polyglot</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="levelProgress"></div>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">260 XP required for Level 5</span>
+        </div>
+
+        <!-- Active Vocabulary Decks -->
+        <div class="panel-box">
+          <div class="panel-header">
+            <i data-lucide="layers" style="width: 18px; height: 18px; color: var(--accent-purple);"></i>
+            <span>Select Deck</span>
+          </div>
+
+          <div class="deck-list">
+            <div class="deck-item active" onclick="switchDeck(0, this)">
+              <div class="deck-info">
+                <span>🇪🇸</span>
+                <div>
+                  <div class="deck-title">Spanish Travel</div>
+                  <div class="deck-badge">25 Words</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+            </div>
+
+            <div class="deck-item" onclick="switchDeck(1, this)">
+              <div class="deck-info">
+                <span>🇫🇷</span>
+                <div>
+                  <div class="deck-title">French Cuisine</div>
+                  <div class="deck-badge">18 Words</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+            </div>
+
+            <div class="deck-item" onclick="switchDeck(2, this)">
+              <div class="deck-info">
+                <span>🇯🇵</span>
+                <div>
+                  <div class="deck-title">Japanese Phrases</div>
+                  <div class="deck-badge">30 Words</div>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    const decks = [
+      [
+        { flag: '🇪🇸', front: 'El Sol', sub: 'Noun', back: 'The Sun', sentence: 'El sol brilla hoy.' },
+        { flag: '🇪🇸', front: 'La Luna', sub: 'Noun', back: 'The Moon', sentence: 'La luna es brillante.' },
+        { flag: '🇪🇸', front: 'El Mar', sub: 'Noun', back: 'The Sea', sentence: 'El mar es azul.' },
+        { flag: '🇪🇸', front: 'La Montaña', sub: 'Noun', back: 'The Mountain', sentence: 'Subimos la montaña.' },
+        { flag: '🇪🇸', front: 'El Viento', sub: 'Noun', back: 'The Wind', sentence: 'El viento sopla fuerte.' }
+      ],
+      [
+        { flag: '🇫🇷', front: 'Le Pain', sub: 'Noun', back: 'The Bread', sentence: 'J’aime le pain frais.' },
+        { flag: '🇫🇷', front: 'Le Fromage', sub: 'Noun', back: 'The Cheese', sentence: 'Le fromage français.' },
+        { flag: '🇫🇷', front: 'L’Eau', sub: 'Noun', back: 'The Water', sentence: 'Un verre d’eau, s’il vous plaît.' }
+      ],
+      [
+        { flag: '🇯🇵', front: 'こんにちは', sub: 'Konnichiwa', back: 'Hello', sentence: 'Konnichiwa, genki desu ka?' },
+        { flag: '🇯🇵', front: 'ありがとう', sub: 'Arigatou', back: 'Thank You', sentence: 'Domo arigatou gozaimasu.' }
+      ]
+    ];
+
+    let currentDeckIdx = 0;
+    let currentCardIdx = 0;
+    let totalXp = 1240;
+
+    function toggleFlip() {
+      document.getElementById('cardElement').classList.toggle('flipped');
     }
-}
 
-function checkAnswer(selected) {
-    if (selected === quizData[currentQuestion].answer) {
-        score++;
+    function updateCard() {
+      const card = decks[currentDeckIdx][currentCardIdx];
+      const cardEl = document.getElementById('cardElement');
+      
+      cardEl.classList.remove('flipped');
+      setTimeout(() => {
+        document.getElementById('wordFront').innerText = card.front;
+        document.getElementById('wordBack').innerText = card.back;
+        document.getElementById('cardNum').innerText = currentCardIdx + 1;
+      }, 200);
     }
-    currentQuestion++;
-    loadQuiz();
-}
 
-// Initialize Quiz
-loadQuiz();
-</script>
+    function nextCard(isCorrect) {
+      if (isCorrect) {
+        totalXp += 20;
+        document.getElementById('xpText').innerText = totalXp.toLocaleString() + ' XP';
+      }
 
+      currentCardIdx = (currentCardIdx + 1) % decks[currentDeckIdx].length;
+      updateCard();
+    }
+
+    function switchDeck(idx, btn) {
+      document.querySelectorAll('.deck-item').forEach(d => d.classList.remove('active'));
+      btn.classList.add('active');
+      currentDeckIdx = idx;
+      currentCardIdx = 0;
+      updateCard();
+    }
+  </script>
 </body>
 </html>
